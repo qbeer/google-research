@@ -24,19 +24,18 @@ import os
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
-from nopad_inception_v3_fcn import model
-
+from model import *
 
 slim = tf.contrib.slim
 
-tf.app.flags.DEFINE_integer(
-    'batch_size', 16, 'The number of samples in each batch.')
-tf.app.flags.DEFINE_integer(
-    'number_of_steps', 20, 'The number of steps for training.')
-tf.app.flags.DEFINE_integer(
-    'save_summaries_secs', 5, 'How often, in seconds, to save summaries.')
-tf.app.flags.DEFINE_string(
-    'logdir', '/tmp/nopad_inception_v3', 'The directory for logging.')
+tf.app.flags.DEFINE_integer('batch_size', 16,
+                            'The number of samples in each batch.')
+tf.app.flags.DEFINE_integer('number_of_steps', 20,
+                            'The number of steps for training.')
+tf.app.flags.DEFINE_integer('save_summaries_secs', 5,
+                            'How often, in seconds, to save summaries.')
+tf.app.flags.DEFINE_string('logdir', '/tmp/nopad_inception_v3',
+                           'The directory for logging.')
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -47,35 +46,36 @@ _IMG_SIZE = 911
 
 def main(_):
 
-  mnist = input_data.read_data_sets(
-      os.path.join(FLAGS.logdir, 'data'), one_hot=True, seed=0).train
+    mnist = input_data.read_data_sets(os.path.join(FLAGS.logdir, 'data'),
+                                      one_hot=True,
+                                      seed=0).train
 
-  with tf.Graph().as_default():
-    images, labels = mnist.next_batch(FLAGS.batch_size)
+    with tf.Graph().as_default():
+        images, labels = mnist.next_batch(FLAGS.batch_size)
 
-    images = tf.reshape(images, [-1, _MNIST_IMAGE_SIZE, _MNIST_IMAGE_SIZE, 1])
-    images = tf.image.resize_images(images, [_IMG_SIZE, _IMG_SIZE])
+        images = tf.reshape(images,
+                            [-1, _MNIST_IMAGE_SIZE, _MNIST_IMAGE_SIZE, 1])
+        images = tf.image.resize_images(images, [_IMG_SIZE, _IMG_SIZE])
 
-    labels = tf.reshape(labels, [-1, 1, 1, _NUM_CLASSES])
+        labels = tf.reshape(labels, [-1, 1, 1, _NUM_CLASSES])
 
-    logits, _ = model.nopad_inception_v3_fcn(
-        images, num_classes=_NUM_CLASSES)
+        logits, _ = nopad_inception_v3_fcn(images,
+                                                 num_classes=_NUM_CLASSES)
 
-    slim.losses.softmax_cross_entropy(logits, labels)
-    total_loss = slim.losses.get_total_loss()
+        slim.losses.softmax_cross_entropy(logits, labels)
+        total_loss = slim.losses.get_total_loss()
 
-    tf.summary.scalar('losses/Total_Loss', total_loss)
+        tf.summary.scalar('losses/Total_Loss', total_loss)
 
-    optimizer = tf.train.RMSPropOptimizer(0.01)
+        optimizer = tf.train.RMSPropOptimizer(0.01)
 
-    train_op = slim.learning.create_train_op(total_loss, optimizer)
+        train_op = slim.learning.create_train_op(total_loss, optimizer)
 
-    slim.learning.train(
-        train_op,
-        logdir=FLAGS.logdir,
-        number_of_steps=FLAGS.number_of_steps,
-        save_summaries_secs=FLAGS.save_summaries_secs)
+        slim.learning.train(train_op,
+                            logdir=FLAGS.logdir,
+                            number_of_steps=FLAGS.number_of_steps,
+                            save_summaries_secs=FLAGS.save_summaries_secs)
 
 
 if __name__ == '__main__':
-  tf.app.run()
+    tf.app.run()
